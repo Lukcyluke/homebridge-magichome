@@ -110,17 +110,23 @@ MagicHomeAccessory.prototype.getColorFromDevice = function() {
 
 MagicHomeAccessory.prototype.setToCurrentColor = function() {
 	var color = this.color;
+	var brightness = this.brightness * ((this.purewhite) ? color.S : 100) / 10000.0; //10000=100*100
+	var S = color.S;
+	if(this.purewhite){
+		var whiteness = Math.round((100 - color.S) * this.brightness / 100.0);
+		if(whiteness <= 0)
+			whiteness = 1;
+		if(whiteness > 100)
+			whiteness = 100;
+    		this.sendCommand(' -w ' + whiteness);
+		S = 100;
+	}
+	
+	var converted = convert.hsl.rgb([color.H, S, color.L]);
+	
+    	var base = '-x ' + this.setup + ' -c ';
+	this.sendCommand(base + Math.round(converted[0] * brightness) + ',' + Math.round(converted[1] * brightness) + ',' + Math.round(converted[2] * brightness));
 
-    if(color.S == 0 && color.H == 0 && this.purewhite) {
-        this.setToWarmWhite();
-        return
-    }
-
-	var brightness = this.brightness;
-	var converted = convert.hsl.rgb([color.H, color.S, color.L]);
-
-    var base = '-x ' + this.setup + ' -c';
-	this.sendCommand(base + Math.round((converted[0] / 100) * brightness) + ',' + Math.round((converted[1] / 100) * brightness) + ',' + Math.round((converted[2] / 100) * brightness));
 };
 
 MagicHomeAccessory.prototype.setToWarmWhite = function() {
